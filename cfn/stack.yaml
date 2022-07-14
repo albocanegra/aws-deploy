@@ -1,0 +1,218 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Template for automating the deployment of containerized applications
+
+Parameters:
+  AppName:
+    Description: The name of the application to deploy
+    Type: String
+    AllowedPattern: "[a-z][a-z0-9-]*"
+  AppImage:
+    Description: Url to the application's docker image
+    Type: String
+  VPC:
+    Description: VPC where the ECS cluster will be deployed
+    Type: String
+  SubnetId1:
+    Description: First SubnetId where the ECS cluster will be deployed
+    Type: String
+  SubnetId2:
+    Description: Second SubnetId where the ECS cluster will be deployed
+    Type: String
+
+Resources:
+
+  # ECS Cluster resources
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties: 
+      ClusterName: !Sub '${AppName}-ECSCluster'
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
+      Tags: 
+        - Key: "App"
+          Value: !Ref AppName
+  ECSClusterSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: Security to group to be used by tasks of the ECS Cluster
+      GroupName: !Sub '${AppName}-SecurityGroupForECSTasks'
+      SecurityGroupIngress:
+        - Description: !Sub Security group for ${AppName} ECS tasks
+          SourceSecurityGroupId: !Ref ServiceLoadBalancerSecurityGroup
+          FromPort: 3000
+          ToPort: 3000
+          IpProtocol: tcp
+      Tags: 
+        - Key: "App"
+          Value: !Ref AppName
+      VpcId: !Ref VPC
+  ECSLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      LogGroupName: !Sub /ecs/${AppName}
+      RetentionInDays: 180
+
+  # ECS roles definition
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties: 
+      RoleName: !Sub ECSTaskRoleFor${AppName}
+      AssumeRolePolicyDocument: >
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      Description: Role to be assumed by the ECS Tasks to be able to consume aws resources
+      Path: !Sub '/${AppName}/'
+      Tags: 
+        - Key: "App"
+          Value: !Ref AppName
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ECSTaskExecutionRoleFor${AppName}
+      AssumeRolePolicyDocument: >
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      Description: Role for execution of ECS Tasks
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Path: !Sub '/${AppName}/'
+      Tags:
+        - Key: "App"
+          Value: !Ref AppName
+
+  # ECS Service definition
+  AppServiceTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties: 
+      Family: !Sub ${AppName}
+      ContainerDefinitions: 
+        -   Name: ServiceContainer
+            Image: !Ref AppImage
+            PortMappings: 
+              - HostPort: 3000
+                Protocol: tcp
+                ContainerPort: 3000
+            LogConfiguration: 
+              LogDriver: awslogs
+              Options: 
+                awslogs-group: !Ref ECSLogGroup
+                awslogs-region: !Ref AWS::Region
+                awslogs-stream-prefix: !Sub ${AppName}
+      Cpu: "256"
+      Memory: "1024"
+      ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt ECSTaskRole.Arn
+      NetworkMode: awsvpc
+      RequiresCompatibilities: 
+        - FARGATE
+      Tags:
+        - Key: "App"
+          Value: !Ref AppName
+  AppECSService:
+    Type: AWS::ECS::Service
+    DependsOn: 
+      - ServiceLoadBalancer
+    Properties:
+      ServiceName: !Ref AppName
+      Cluster: !Ref ECSCluster
+      DesiredCount: 1
+      LaunchType: FARGATE
+      TaskDefinition: !GetAtt AppServiceTaskDefinition.TaskDefinitionArn
+      LoadBalancers:
+        - ContainerName: "ServiceContainer"
+          ContainerPort: 3000
+          TargetGroupArn: !Ref ServiceLoadBalancerTargetGroup
+      NetworkConfiguration: 
+        AwsvpcConfiguration: 
+          AssignPublicIp: ENABLED
+          SecurityGroups: 
+            - !Ref ECSClusterSecurityGroup
+          Subnets: [ !Ref SubnetId1,  !Ref SubnetId2 ]
+      PropagateTags: TASK_DEFINITION
+      Tags:
+        - Key: "App"
+          Value: !Ref AppName
+
+  # Application Load Balancer to enable access to the service
+  ServiceLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Ref AppName
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref ServiceLoadBalancerSecurityGroup
+      SubnetMappings:
+        - SubnetId: !Ref SubnetId1
+        - SubnetId: !Ref SubnetId2
+      Type: application
+      Tags:
+        - Key: "App"
+          Value: !Ref AppName
+  ServiceLoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties: 
+      LoadBalancerArn: !Ref ServiceLoadBalancer
+      Port: 80
+      Protocol: "HTTP"
+      DefaultActions:
+        - Order: 1
+          TargetGroupArn: !Ref ServiceLoadBalancerTargetGroup
+          Type: "forward"
+  ServiceLoadBalancerTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${AppName}-TargetGroup'
+      Port: 3000
+      Protocol: HTTP
+      TargetType: "ip"
+      VpcId: !Ref VPC
+      Tags: 
+        - Key: "App"
+          Value: !Ref AppName
+  ServiceLoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: Security to group for the LB
+      GroupName: !Sub '${AppName}-SecurityGroupForLB'
+      SecurityGroupIngress:
+        - Description: !Sub Security group for ${AppName} ECS tasks
+          CidrIp: 0.0.0.0/0
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: tcp
+      Tags: 
+        - Key: "App"
+          Value: !Ref AppName
+      VpcId: !Ref VPC
+
+Outputs:
+  ECSCluster:
+    Value: !Ref ECSCluster
+    Description: ECS Cluster to run backend tasks
+  ServiceLoadBalancer:
+    Value: !GetAtt ServiceLoadBalancer.DNSName
+    Description: DNS name for accessing the load balancer

@@ -1,0 +1,22 @@
+[ 
+  {
+    "ParameterKey": "AppName",
+    "ParameterValue" : "instant-search"
+  },
+  {
+    "ParameterKey": "AppImage",
+    "ParameterValue" : "docker.io/albocanegra/instant-search-demo:1.0"
+  },
+  {
+    "ParameterKey": "VPC",
+    "ParameterValue" : ""
+  },
+  {
+    "ParameterKey": "SubnetId1",
+    "ParameterValue" : ""
+  },
+  {
+    "ParameterKey": "SubnetId2",
+    "ParameterValue" : ""
+  }
+]
