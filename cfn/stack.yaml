@@ -36,7 +36,7 @@ Resources:
   ECSClusterSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties: 
-      GroupDescription: Security to group to be used by tasks of the ECS Cluster
+      GroupDescription: Security group to be used by tasks of the ECS Cluster
       GroupName: !Sub '${AppName}-SecurityGroupForECSTasks'
       SecurityGroupIngress:
         - Description: !Sub Security group for ${AppName} ECS tasks
@@ -73,7 +73,7 @@ Resources:
             }
           ]
         }
-      Description: Role to be assumed by the ECS Tasks to be able to consume aws resources
+      Description: Role to be assumed by the ECS Tasks
       Path: !Sub '/${AppName}/'
       Tags: 
         - Key: "App"
