@@ -107,7 +107,7 @@ aws cloudformation describe-change-set --stack-name instant-search-demo --change
 
 Once validated the changes in the ChangeSet, they can be executed using:
 ```
-aws cloudformation execute-change-set --stack-name instant-search-demo --change-set-name instant-search-demo-update --capabilities CAPABILITY_NAMED_IAM --template-body file://stack.yaml --parameters file://stack-conf.json
+aws cloudformation execute-change-set --stack-name instant-search-demo --change-set-name instant-search-demo-update
 ```
 
 In the case that a failure would occur during the udpate process, CloudFormation would RollBack automatically to the previous working state.
@@ -116,7 +116,7 @@ In the case that a failure would occur during the udpate process, CloudFormation
 
 The state of the stack update can be monitored in the AWS console, or using this command:
 ```
-aws cloudformation delete-stack --stack-name instant-search-demo
+aws cloudformation describe-stacks --stack-name instant-search-demo
 ```
 
 ### Delete
