@@ -5,7 +5,7 @@
   },
   {
     "ParameterKey": "AppImage",
-    "ParameterValue" : "docker.io/albocanegra/instant-search-demo:1.0"
+    "ParameterValue" : "docker.io/albocanegra/instant-search-demo:2.0"
   },
   {
     "ParameterKey": "VPC",

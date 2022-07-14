@@ -6,10 +6,12 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | b
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
     nvm install 9.11.2
 
+### MODIFIED SO APP WILL FAIL ###
 # Get instant-search-demo app
 RUN mkdir /var/app && cd /var/app && \
-    git clone https://github.com/algolia/instant-search-demo.git && \
-    npm install ./instant-search-demo/
+    git clone https://github.com/algolia/instant-search-demo.git
+#    npm install ./instant-search-demo/
+### END ###
 
 # Note: Deploying this image on ECS Fargate have resulted in the following error: 
 # Error: ENOSPC: System limit for number of file watchers reached
