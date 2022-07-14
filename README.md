@@ -22,7 +22,7 @@ Docker images are pushed to [DockerHub](https://hub.docker.com/repository/docker
 
 ### Stack architecture
 
-The application is a Web application, which has been deployed as a ECS Service. An Application Load balancer has been configured to receive requests from the clients and send them to the ECS tasks for processing.
+The application is a Web application, which has been deployed as an ECS Service. An Application Load balancer has been configured to receive requests from the clients and send them to the ECS tasks for processing.
 
 ![architecture](/instant-search-demo.arch.png)
 
@@ -43,7 +43,7 @@ This version is the working initial state.
 Branch: RELEASE2.0
 DockerHub image tag: 2.0
 
-This version points to a broken container that will not be able to reach a running state.
+This version points to a broken container that will not be able to reach the running state.
 
 ##### 3.0
 
@@ -83,7 +83,7 @@ That command will also provide the stack outputs, which include the Application 
 
 ### Update
 
-In order to ensure that any update is secure and being able to preview any change before it is executed, CloudFormation ChangeSets will be used in various steps.
+In order to ensure that any update is secure and to be able to preview any change before it is executed, CloudFormation ChangeSets will be used in various steps.
 
 In order to facilitate the testing of the update process, three different branches have been provided, as stated in the **Versions** section.
 
@@ -126,9 +126,9 @@ The stack can be deleted using this command:
 aws cloudformation delete-stack --stack-name instant-search-demo
 ```
 
-## Mext steps
+## Next steps
 
-This is a very basic approach to an automated deployment, but there are some improvements that are highly recommended before start using them on a real environment:
+This is a very basic approach to an automated deployment, but there are some improvements that are highly recommended before using them in a real environment:
 - Using HTTPS on the load balancer.
 - Deploying with High availability and AutoScaling on the ECS cluster.
 - Substitute the AWS CLI commands for an Automated deployment triggered by the GitHub repository.
