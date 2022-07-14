@@ -1,10 +1,12 @@
 FROM node:18
 
+ENV NVM_VERSION 9.11.2
+
 # Install nvm
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && \
     export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")" && \
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
-    nvm install 9.11.2
+    nvm install $NVM_VERSION
 
 # Get instant-search-demo app
 RUN mkdir /var/app && cd /var/app && \
